@@ -5,44 +5,75 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TBH青箱ドロップ間隔タイマー</title>
     <style>
+        :root {
+            --bg-color: #1a1a2e;
+            --card-bg: #16213e;
+            --accent-blue: #4361ee;
+            --accent-cyan: #4cc9f0;
+            --accent-pink: #f72585;
+            --accent-green: #23d160;
+            --text-color: #e0e0e0;
+            --sub-text: #a2a8d3;
+        }
+
         body {
-            font-family: 'Segoe UI', Meiryo, sans-serif;
+            font-family: 'Segoe UI', 'Meiryo', sans-serif;
             margin: 0;
-            padding: 40px 20px;
-            background-color: #1a1a2e;
-            color: #e0e0e0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             display: flex;
             justify-content: center;
         }
 
         .app-card {
-            background-color: #16213e;
+            background-color: var(--card-bg);
             max-width: 500px;
             width: 100%;
-            padding: 30px;
+            padding: 25px;
             border-radius: 16px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
             border: 1px solid #0f3460;
+            position: relative;
+        }
+
+        /* 編集ボタン（右上） */
+        .edit-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: 1px solid var(--accent-cyan);
+            color: var(--accent-cyan);
+            padding: 5px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .edit-toggle.active {
+            background-color: var(--accent-cyan);
+            color: var(--card-bg);
+            font-weight: bold;
         }
 
         h1 {
             text-align: center;
-            font-size: 24px;
-            margin-top: 0;
-            margin-bottom: 20px;
-            color: #4cc9f0;
-            letter-spacing: 1px;
-            font-weight: bold;
+            font-size: 20px;
+            margin: 0 0 20px 0;
+            color: var(--accent-cyan);
+            padding-right: 60px;
+            word-break: break-all;
         }
 
         .instructions {
             background-color: #0f3460;
-            padding: 15px;
+            padding: 12px;
             border-radius: 8px;
-            font-size: 14px;
-            line-height: 1.6;
+            font-size: 13px;
+            line-height: 1.5;
             margin-bottom: 20px;
-            color: #a2a8d3;
+            color: var(--sub-text);
         }
 
         .instructions ul {
@@ -51,7 +82,7 @@
         }
 
         .settings-area {
-            background-color: #1a1a2e;
+            background-color: var(--bg-color);
             margin-bottom: 20px;
             padding: 15px;
             border-radius: 10px;
@@ -59,20 +90,19 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
-            border: 1px dashed #4361ee;
+            border: 1px dashed var(--accent-blue);
         }
 
         .settings-area label {
-            font-size: 15px;
-            color: #a2a8d3;
+            font-size: 14px;
             font-weight: bold;
         }
 
         .settings-area input {
-            background-color: #16213e;
-            border: 2px solid #4361ee;
+            background-color: var(--card-bg);
+            border: 2px solid var(--accent-blue);
             color: white;
-            width: 70px;
+            width: 60px;
             font-size: 18px;
             font-weight: bold;
             padding: 5px;
@@ -81,121 +111,141 @@
             outline: none;
         }
 
-        .settings-area input:focus {
-            border-color: #4cc9f0;
+        /* タイマーリスト */
+        #timerList {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
         .timer-row {
             display: flex;
             align-items: center;
-            background-color: #1a1a2e;
-            margin-bottom: 12px;
-            padding: 10px 15px;
+            background-color: var(--bg-color);
+            padding: 8px 12px;
             border-radius: 10px;
-            border-left: 4px solid #4361ee;
+            border-left: 4px solid var(--accent-blue);
+            min-height: 50px;
+        }
+
+        /* 削除ボタン（通常は非表示） */
+        .del-btn {
+            display: none;
+            background-color: #ff4d4d;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-right: 10px;
+            flex-shrink: 0;
         }
 
         .main-btn {
-            background-color: #4361ee;
+            background-color: var(--accent-blue);
             color: white;
             border: none;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
-            padding: 10px 15px;
-            min-width: 100px;
+            padding: 8px 12px;
+            min-width: 85px;
             border-radius: 6px;
             cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .main-btn:hover {
-            background-color: #3f37c9;
+            flex-shrink: 0;
         }
 
         .time-display {
-            font-size: 24px;
+            font-size: 22px;
             font-weight: bold;
             font-family: 'Courier New', Courier, monospace;
-            color: #4cc9f0;
+            color: var(--accent-cyan);
             margin-left: auto;
-            margin-right: 20px;
+            margin-right: 15px;
         }
 
         .reset-btn {
             background-color: #e0e0e0;
             color: #333;
             border: none;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: bold;
-            padding: 6px 10px;
+            padding: 5px 8px;
             border-radius: 4px;
             cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .reset-btn:hover {
-            background-color: #b5b5b5;
         }
 
         .go-text {
-            color: #f72585 !important;
+            color: var(--accent-pink) !important;
             animation: pulse 1s infinite;
         }
 
         @keyframes pulse {
-            0% { opacity: 1; }
+            0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
-            100% { opacity: 1; }
         }
 
+        /* 追加ボタン（通常は非表示） */
+        #addArea {
+            display: none;
+            margin-top: 15px;
+            text-align: center;
+        }
+        .add-btn {
+            background-color: var(--accent-green);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* オーディオ設定 */
         .audio-area {
             margin-top: 25px;
-            padding-top: 20px;
+            padding-top: 15px;
             border-top: 1px solid #0f3460;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
         }
 
         .volume-container {
             display: flex;
             align-items: center;
             gap: 10px;
-            width: 100%;
-            justify-content: center;
+            font-size: 13px;
         }
 
-        .volume-container label {
-            font-size: 14px;
-            color: #a2a8d3;
-        }
-
-        .volume-container input[type="range"] {
-            width: 150px;
+        input[type="range"] {
+            width: 120px;
             cursor: pointer;
         }
 
         .test-btn {
-            background-color: #23d160;
+            background-color: var(--accent-green);
             color: white;
             border: none;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: bold;
-            padding: 8px 20px;
+            padding: 6px 15px;
             border-radius: 6px;
             cursor: pointer;
-            transition: background 0.2s;
         }
 
-        .test-btn:hover {
-            background-color: #1fba53;
-        }
+        /* 編集モード時のスタイル */
+        .is-editing .del-btn { display: inline-block; }
+        .is-editing #addArea { display: block; }
+        .is-editing .main-btn { filter: grayscale(1); pointer-events: none; }
     </style>
 </head>
 <body>
 
-    <div class="app-card">
+    <div class="app-card" id="appCard">
+        <button class="edit-toggle" id="editToggle" onclick="toggleEditMode()">編集</button>
         <h1>TBH青箱ドロップ間隔タイマー</h1>
 
         <div class="instructions">
@@ -212,27 +262,16 @@
             <span>分</span>
         </div>
 
-        <div class="timer-row">
-            <button class="main-btn" onclick="startTimer(0)">N3-5</button>
-            <span class="time-display" id="display-0">--:--</span>
-            <button class="reset-btn" onclick="resetTimer(0)">リセット</button>
-        </div>
+        <div id="timerList">
+            </div>
 
-        <div class="timer-row">
-            <button class="main-btn" onclick="startTimer(1)">H2-5</button>
-            <span class="time-display" id="display-1">--:--</span>
-            <button class="reset-btn" onclick="resetTimer(1)">リセット</button>
-        </div>
-
-        <div class="timer-row">
-            <button class="main-btn" onclick="startTimer(2)">T1-3</button>
-            <span class="time-display" id="display-2">--:--</span>
-            <button class="reset-btn" onclick="resetTimer(2)">リセット</button>
+        <div id="addArea">
+            <button class="add-btn" onclick="addNewTimer()">➕ 新規ボタンを追加</button>
         </div>
 
         <div class="audio-area">
             <div class="volume-container">
-                <label for="volumeSlider">通知音音量：</label>
+                <label>通知音音量</label>
                 <input type="range" id="volumeSlider" min="0" max="1" step="0.1" value="0.5">
             </div>
             <button class="test-btn" onclick="playSound()">通知音テスト</button>
@@ -240,91 +279,143 @@
     </div>
 
 <script>
-    let timers = [
-        { intervalId: null, timeLeft: 0 },
-        { intervalId: null, timeLeft: 0 },
-        { intervalId: null, timeLeft: 0 }
-    ];
+    // タイマーデータの初期値
+    const defaultData = ["N3-5", "H2-5", "T1-3"];
+    let timerPresets = [];
+    let runningTimers = {}; // intervalIdを管理
 
-    // 「ピロリロリーン！」風の可愛い通知音
+    // 起動時の読み込み
+    window.onload = () => {
+        const saved = localStorage.getItem('tbh_timer_presets');
+        if (saved) {
+            timerPresets = JSON.parse(saved);
+        } else {
+            timerPresets = defaultData;
+        }
+        renderTimers();
+    };
+
+    // リストの描画
+    function renderTimers() {
+        const list = document.getElementById('timerList');
+        list.innerHTML = "";
+        
+        timerPresets.forEach((name, index) => {
+            const row = document.createElement('div');
+            row.className = 'timer-row';
+            row.innerHTML = `
+                <button class="del-btn" onclick="deleteTimer(${index})">✕</button>
+                <button class="main-btn" onclick="startTimer(${index})">${name}</button>
+                <span class="time-display" id="display-${index}">--:--</span>
+                <button class="reset-btn" onclick="resetTimer(${index})">リセット</button>
+            `;
+            list.appendChild(row);
+        });
+    }
+
+    // 編集モードの切替
+    function toggleEditMode() {
+        const card = document.getElementById('appCard');
+        const btn = document.getElementById('editToggle');
+        const isEditing = card.classList.toggle('is-editing');
+        btn.innerText = isEditing ? "完了" : "編集";
+        btn.classList.toggle('active', isEditing);
+    }
+
+    // 新規追加
+    function addNewTimer() {
+        const name = prompt("ボタンに表示する名前を入力してください", "新タイマー");
+        if (name) {
+            timerPresets.push(name);
+            saveAndRender();
+        }
+    }
+
+    // 削除
+    function deleteTimer(index) {
+        if (confirm(`「${timerPresets[index]}」を削除しますか？`)) {
+            resetTimer(index);
+            timerPresets.splice(index, 1);
+            saveAndRender();
+        }
+    }
+
+    // 保存して再描画
+    function saveAndRender() {
+        localStorage.setItem('tbh_timer_presets', JSON.stringify(timerPresets));
+        renderTimers();
+    }
+
+    // タイマー開始
+    function startTimer(index) {
+        if (runningTimers[index]) {
+            clearInterval(runningTimers[index]);
+        }
+
+        const inputMinutes = parseInt(document.getElementById('intervalInput').value) || 12;
+        let timeLeft = inputMinutes * 60;
+
+        updateDisplay(index, timeLeft);
+
+        runningTimers[index] = setInterval(() => {
+            timeLeft--;
+            updateDisplay(index, timeLeft);
+
+            if (timeLeft <= 0) {
+                clearInterval(runningTimers[index]);
+                delete runningTimers[index];
+                const display = document.getElementById(`display-${index}`);
+                display.innerText = "GO！";
+                display.classList.add('go-text');
+                playSound();
+            }
+        }, 1000);
+    }
+
+    // リセット
+    function resetTimer(index) {
+        if (runningTimers[index]) {
+            clearInterval(runningTimers[index]);
+            delete runningTimers[index];
+        }
+        const display = document.getElementById(`display-${index}`);
+        if (display) {
+            display.innerText = "--:--";
+            display.classList.remove('go-text');
+        }
+    }
+
+    // 秒を分：秒にして表示
+    function updateDisplay(index, seconds) {
+        const display = document.getElementById(`display-${index}`);
+        if (!display) return;
+        const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const s = (seconds % 60).toString().padStart(2, '0');
+        display.innerText = `${m}:${s}`;
+        display.classList.remove('go-text');
+    }
+
+    // 通知音
     function playSound() {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const volume = parseFloat(document.getElementById('volumeSlider').value);
-        
-        // 音符の設定（ミ、ソ、ドの高音で軽快に）
-        const notes = [659.25, 783.99, 1046.50]; // E5, G5, C6
-        const times = [0, 0.08, 0.16]; // 鳴らすタイミングを少しずつずらす
-        const durations = [0.12, 0.12, 0.25]; // 各音の長さ
+        const notes = [659.25, 783.99, 1046.50]; 
+        const durations = [0.12, 0.12, 0.25];
 
         notes.forEach((freq, i) => {
             setTimeout(() => {
                 const oscillator = audioCtx.createOscillator();
                 const gainNode = audioCtx.createGain();
-
-                // 少し丸みのある可愛い音にするため、三角波（triangle）を採用
                 oscillator.type = 'triangle';
                 oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime);
-
-                // 音量調整（フェードアウトさせて優しく消えるようにする）
                 gainNode.gain.setValueAtTime(volume * 0.2, audioCtx.currentTime);
                 gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + durations[i]);
-
                 oscillator.connect(gainNode);
                 gainNode.connect(audioCtx.destination);
-
                 oscillator.start();
                 oscillator.stop(audioCtx.currentTime + durations[i]);
-            }, times[i] * 1000);
+            }, i * 80);
         });
-    }
-
-    function updateDisplay(index, text, isGo = false) {
-        const display = document.getElementById(`display-${index}`);
-        display.innerText = text;
-        if (isGo) {
-            display.classList.add('go-text');
-        } else {
-            display.classList.remove('go-text');
-        }
-    }
-
-    function startTimer(index) {
-        if (timers[index].intervalId) {
-            clearInterval(timers[index].intervalId);
-        }
-
-        const inputMinutes = parseInt(document.getElementById('intervalInput').value) || 12;
-        timers[index].timeLeft = inputMinutes * 60;
-
-        formatAndDisplay(index, timers[index].timeLeft);
-
-        timers[index].intervalId = setInterval(() => {
-            timers[index].timeLeft--;
-
-            if (timers[index].timeLeft <= 0) {
-                clearInterval(timers[index].intervalId);
-                timers[index].intervalId = null;
-                updateDisplay(index, "GO！", true);
-                playSound();
-            } else {
-                formatAndDisplay(index, timers[index].timeLeft);
-            }
-        }, 1000);
-    }
-
-    function resetTimer(index) {
-        if (timers[index].intervalId) {
-            clearInterval(timers[index].intervalId);
-            timers[index].intervalId = null;
-        }
-        timers[index].timeLeft = 0;
-        updateDisplay(index, "--:--", false);
-    }
-
-    function formatAndDisplay(index, totalSeconds) {
-        const min = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
-        const sec = (totalSeconds % 60).toString().padStart(2, '0');
-        updateDisplay(index, `${min}:${sec}`, false);
     }
 </script>
 
