@@ -37,7 +37,6 @@
             position: relative;
         }
 
-        /* 編集ボタン（右上） */
         .edit-toggle {
             position: absolute;
             top: 20px;
@@ -111,7 +110,6 @@
             outline: none;
         }
 
-        /* タイマーリスト */
         #timerList {
             display: flex;
             flex-direction: column;
@@ -128,7 +126,6 @@
             min-height: 50px;
         }
 
-        /* 削除ボタン（通常は非表示） */
         .del-btn {
             display: none;
             background-color: #ff4d4d;
@@ -186,7 +183,6 @@
             50% { opacity: 0.5; }
         }
 
-        /* 追加ボタン（通常は非表示） */
         #addArea {
             display: none;
             margin-top: 15px;
@@ -200,6 +196,64 @@
             border-radius: 8px;
             font-weight: bold;
             cursor: pointer;
+        }
+
+        /* 🆕 追加：クリア時間設定パネルの外枠 */
+        .clear-time-panel {
+            margin-top: 25px;
+            padding: 15px;
+            background-color: var(--bg-color);
+            border-radius: 12px;
+            border: 1px solid #0f3460;
+        }
+
+        .panel-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--accent-cyan);
+            margin-bottom: 12px;
+            text-align: center;
+            border-bottom: 1px solid #0f3460;
+            padding-bottom: 5px;
+        }
+
+        .clear-time-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .clear-time-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .clear-time-label {
+            color: var(--sub-text);
+            font-weight: bold;
+            max-width: 150px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .clear-time-input-wrap {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .clear-time-input-wrap input {
+            background-color: var(--card-bg);
+            border: 1px solid var(--accent-blue);
+            color: white;
+            width: 50px;
+            font-size: 14px;
+            padding: 4px;
+            text-align: center;
+            border-radius: 4px;
+            outline: none;
         }
 
         /* オーディオ設定 */
@@ -236,7 +290,6 @@
             cursor: pointer;
         }
 
-        /* 編集モード時のスタイル */
         .is-editing .del-btn { display: inline-block; }
         .is-editing #addArea { display: block; }
         .is-editing .main-btn { filter: grayscale(1); pointer-events: none; }
@@ -262,11 +315,15 @@
             <span>分</span>
         </div>
 
-        <div id="timerList">
-            </div>
+        <div id="timerList"></div>
 
         <div id="addArea">
             <button class="add-btn" onclick="addNewTimer()">➕ 新規ボタンを追加</button>
+        </div>
+
+        <div class="clear-time-panel">
+            <div class="panel-title">⏱ クリア時間</div>
+            <div id="clearTimeSettingsList"></div>
         </div>
 
         <div class="audio-area">
@@ -279,41 +336,73 @@
     </div>
 
 <script>
-    // タイマーデータの初期値
-    const defaultData = ["N3-5", "H2-5", "T1-3"];
+    // 初期データ構造をオブジェクトの配列に変更 [ { name: "N3-5", clearTime: 0 }, ... ]
+    const defaultData = [
+        { name: "N3-5", clearTime: 0 },
+        { name: "H2-5", clearTime: 0 },
+        { name: "T1-3", clearTime: 0 }
+    ];
     let timerPresets = [];
-    let runningTimers = {}; // intervalIdを管理
+    let runningTimers = {};
 
-    // 起動時の読み込み
     window.onload = () => {
-        const saved = localStorage.getItem('tbh_timer_presets');
+        const saved = localStorage.getItem('tbh_timer_presets_v2');
         if (saved) {
             timerPresets = JSON.parse(saved);
         } else {
-            timerPresets = defaultData;
+            // 旧バージョンのデータ（文字列配列）がある場合の互換性ケア
+            const oldSaved = localStorage.getItem('tbh_timer_presets');
+            if (oldSaved) {
+                const oldData = JSON.parse(oldSaved);
+                timerPresets = oldData.map(item => typeof item === 'string' ? { name: item, clearTime: 0 } : item);
+            } else {
+                timerPresets = defaultData;
+            }
         }
-        renderTimers();
+        renderApp();
     };
 
-    // リストの描画
-    function renderTimers() {
+    // メイン描画関数（タイマーリストと下部パネルを同時に更新）
+    function renderApp() {
         const list = document.getElementById('timerList');
-        list.innerHTML = "";
+        const configList = document.getElementById('clearTimeSettingsList');
         
-        timerPresets.forEach((name, index) => {
+        list.innerHTML = "";
+        configList.innerHTML = "";
+        
+        timerPresets.forEach((item, index) => {
+            // 1. タイマー行の生成
             const row = document.createElement('div');
             row.className = 'timer-row';
             row.innerHTML = `
                 <button class="del-btn" onclick="deleteTimer(${index})">✕</button>
-                <button class="main-btn" onclick="startTimer(${index})">${name}</button>
+                <button class="main-btn" onclick="startTimer(${index})">${item.name}</button>
                 <span class="time-display" id="display-${index}">--:--</span>
                 <button class="reset-btn" onclick="resetTimer(${index})">リセット</button>
             `;
             list.appendChild(row);
+
+            // 2. 🆕 クリア時間入力行の生成
+            const configRow = document.createElement('div');
+            configRow.className = 'clear-time-row';
+            configRow.innerHTML = `
+                <div class="clear-time-label">${item.name}</div>
+                <div class="clear-time-input-wrap">
+                    <input type="number" id="clearInput-${index}" value="${item.clearTime || 0}" min="0" onchange="updateClearTime(${index}, this.value)">
+                    <span>分</span>
+                </div>
+            `;
+            configList.appendChild(configRow);
         });
     }
 
-    // 編集モードの切替
+    // 🆕 個別クリア時間の数値をデータに反映して保存
+    function updateClearTime(index, value) {
+        const minutes = parseInt(value) || 0;
+        timerPresets[index].clearTime = minutes;
+        localStorage.setItem('tbh_timer_presets_v2', JSON.stringify(timerPresets));
+    }
+
     function toggleEditMode() {
         const card = document.getElementById('appCard');
         const btn = document.getElementById('editToggle');
@@ -322,40 +411,51 @@
         btn.classList.toggle('active', isEditing);
     }
 
-    // 新規追加
     function addNewTimer() {
         const name = prompt("ボタンに表示する名前を入力してください", "新タイマー");
         if (name) {
-            timerPresets.push(name);
+            timerPresets.push({ name: name, clearTime: 0 });
             saveAndRender();
         }
     }
 
-    // 削除
     function deleteTimer(index) {
-        if (confirm(`「${timerPresets[index]}」を削除しますか？`)) {
+        if (confirm(`「${timerPresets[index].name}」を削除しますか？`)) {
             resetTimer(index);
             timerPresets.splice(index, 1);
             saveAndRender();
         }
     }
 
-    // 保存して再描画
     function saveAndRender() {
-        localStorage.setItem('tbh_timer_presets', JSON.stringify(timerPresets));
-        renderTimers();
+        localStorage.setItem('tbh_timer_presets_v2', JSON.stringify(timerPresets));
+        renderApp();
     }
 
-    // タイマー開始
+    // タイマー開始（🆕 逆算ロジックを追加）
     function startTimer(index) {
         if (runningTimers[index]) {
             clearInterval(runningTimers[index]);
         }
 
-        const inputMinutes = parseInt(document.getElementById('intervalInput').value) || 12;
-        let timeLeft = inputMinutes * 60;
+        // ベースとなる全体のドロップ間隔
+        const baseMinutes = parseInt(document.getElementById('intervalInput').value) || 12;
+        // 🆕 ボタン固有のクリア時間（引き算する分数）
+        const minusMinutes = timerPresets[index].clearTime || 0;
+
+        // 計算後の残り時間（分を秒に変換）
+        let targetMinutes = baseMinutes - minusMinutes;
+        if (targetMinutes < 0) targetMinutes = 0; // マイナス値防止
+        
+        let timeLeft = targetMinutes * 60;
 
         updateDisplay(index, timeLeft);
+
+        // 既に0（ドロップ間隔以下のクリア時間が設定されている場合など）は即GO！
+        if (timeLeft <= 0) {
+            triggerGo(index);
+            return;
+        }
 
         runningTimers[index] = setInterval(() => {
             timeLeft--;
@@ -364,15 +464,20 @@
             if (timeLeft <= 0) {
                 clearInterval(runningTimers[index]);
                 delete runningTimers[index];
-                const display = document.getElementById(`display-${index}`);
-                display.innerText = "GO！";
-                display.classList.add('go-text');
-                playSound();
+                triggerGo(index);
             }
         }, 1000);
     }
 
-    // リセット
+    function triggerGo(index) {
+        const display = document.getElementById(`display-${index}`);
+        if (display) {
+            display.innerText = "GO！";
+            display.classList.add('go-text');
+        }
+        playSound();
+    }
+
     function resetTimer(index) {
         if (runningTimers[index]) {
             clearInterval(runningTimers[index]);
@@ -385,7 +490,6 @@
         }
     }
 
-    // 秒を分：秒にして表示
     function updateDisplay(index, seconds) {
         const display = document.getElementById(`display-${index}`);
         if (!display) return;
@@ -395,7 +499,6 @@
         display.classList.remove('go-text');
     }
 
-    // 通知音
     function playSound() {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const volume = parseFloat(document.getElementById('volumeSlider').value);
