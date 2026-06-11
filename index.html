@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TBH青箱ドロップ間隔タイマー</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Meiryo, sans-serif;
+            margin: 0;
+            padding: 40px 20px;
+            background-color: #1a1a2e;
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+        }
+
+        .app-card {
+            background-color: #16213e;
+            max-width: 500px;
+            width: 100%;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid #0f3460;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 24px;
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #4cc9f0;
+            letter-spacing: 1px;
+            font-weight: bold;
+        }
+
+        .instructions {
+            background-color: #0f3460;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            color: #a2a8d3;
+        }
+
+        .instructions ul {
+            margin: 5px 0;
+            padding-left: 20px;
+        }
+
+        .settings-area {
+            background-color: #1a1a2e;
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            border: 1px dashed #4361ee;
+        }
+
+        .settings-area label {
+            font-size: 15px;
+            color: #a2a8d3;
+            font-weight: bold;
+        }
+
+        .settings-area input {
+            background-color: #16213e;
+            border: 2px solid #4361ee;
+            color: white;
+            width: 70px;
+            font-size: 18px;
+            font-weight: bold;
+            padding: 5px;
+            text-align: center;
+            border-radius: 6px;
+            outline: none;
+        }
+
+        .settings-area input:focus {
+            border-color: #4cc9f0;
+        }
+
+        .timer-row {
+            display: flex;
+            align-items: center;
+            background-color: #1a1a2e;
+            margin-bottom: 12px;
+            padding: 10px 15px;
+            border-radius: 10px;
+            border-left: 4px solid #4361ee;
+        }
+
+        .main-btn {
+            background-color: #4361ee;
+            color: white;
+            border: none;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 10px 15px;
+            min-width: 100px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .main-btn:hover {
+            background-color: #3f37c9;
+        }
+
+        .time-display {
+            font-size: 24px;
+            font-weight: bold;
+            font-family: 'Courier New', Courier, monospace;
+            color: #4cc9f0;
+            margin-left: auto;
+            margin-right: 20px;
+        }
+
+        .reset-btn {
+            background-color: #e0e0e0;
+            color: #333;
+            border: none;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .reset-btn:hover {
+            background-color: #b5b5b5;
+        }
+
+        .go-text {
+            color: #f72585 !important;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .audio-area {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #0f3460;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .volume-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .volume-container label {
+            font-size: 14px;
+            color: #a2a8d3;
+        }
+
+        .volume-container input[type="range"] {
+            width: 150px;
+            cursor: pointer;
+        }
+
+        .test-btn {
+            background-color: #23d160;
+            color: white;
+            border: none;
+            font-size: 14px;
+            font-weight: bold;
+            padding: 8px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .test-btn:hover {
+            background-color: #1fba53;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-card">
+        <h1>TBH青箱ドロップ間隔タイマー</h1>
+
+        <div class="instructions">
+            <strong>【使い方】</strong>
+            <ul>
+                <li>下の入力欄に「ドロップ間隔」を設定します。</li>
+                <li>各ボタンを押すとカウントダウンが始まります。</li>
+            </ul>
+        </div>
+
+        <div class="settings-area">
+            <label for="intervalInput">宝箱ドロップ間隔：</label>
+            <input type="number" id="intervalInput" value="12" min="1">
+            <span>分</span>
+        </div>
+
+        <div class="timer-row">
+            <button class="main-btn" onclick="startTimer(0)">N3-5</button>
+            <span class="time-display" id="display-0">--:--</span>
+            <button class="reset-btn" onclick="resetTimer(0)">リセット</button>
+        </div>
+
+        <div class="timer-row">
+            <button class="main-btn" onclick="startTimer(1)">H2-5</button>
+            <span class="time-display" id="display-1">--:--</span>
+            <button class="reset-btn" onclick="resetTimer(1)">リセット</button>
+        </div>
+
+        <div class="timer-row">
+            <button class="main-btn" onclick="startTimer(2)">T1-3</button>
+            <span class="time-display" id="display-2">--:--</span>
+            <button class="reset-btn" onclick="resetTimer(2)">リセット</button>
+        </div>
+
+        <div class="audio-area">
+            <div class="volume-container">
+                <label for="volumeSlider">通知音音量：</label>
+                <input type="range" id="volumeSlider" min="0" max="1" step="0.1" value="0.5">
+            </div>
+            <button class="test-btn" onclick="playSound()">通知音テスト</button>
+        </div>
+    </div>
+
+<script>
+    let timers = [
+        { intervalId: null, timeLeft: 0 },
+        { intervalId: null, timeLeft: 0 },
+        { intervalId: null, timeLeft: 0 }
+    ];
+
+    // 「ピロリロリーン！」風の可愛い通知音
+    function playSound() {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const volume = parseFloat(document.getElementById('volumeSlider').value);
+        
+        // 音符の設定（ミ、ソ、ドの高音で軽快に）
+        const notes = [659.25, 783.99, 1046.50]; // E5, G5, C6
+        const times = [0, 0.08, 0.16]; // 鳴らすタイミングを少しずつずらす
+        const durations = [0.12, 0.12, 0.25]; // 各音の長さ
+
+        notes.forEach((freq, i) => {
+            setTimeout(() => {
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+
+                // 少し丸みのある可愛い音にするため、三角波（triangle）を採用
+                oscillator.type = 'triangle';
+                oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+                // 音量調整（フェードアウトさせて優しく消えるようにする）
+                gainNode.gain.setValueAtTime(volume * 0.2, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + durations[i]);
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + durations[i]);
+            }, times[i] * 1000);
+        });
+    }
+
+    function updateDisplay(index, text, isGo = false) {
+        const display = document.getElementById(`display-${index}`);
+        display.innerText = text;
+        if (isGo) {
+            display.classList.add('go-text');
+        } else {
+            display.classList.remove('go-text');
+        }
+    }
+
+    function startTimer(index) {
+        if (timers[index].intervalId) {
+            clearInterval(timers[index].intervalId);
+        }
+
+        const inputMinutes = parseInt(document.getElementById('intervalInput').value) || 12;
+        timers[index].timeLeft = inputMinutes * 60;
+
+        formatAndDisplay(index, timers[index].timeLeft);
+
+        timers[index].intervalId = setInterval(() => {
+            timers[index].timeLeft--;
+
+            if (timers[index].timeLeft <= 0) {
+                clearInterval(timers[index].intervalId);
+                timers[index].intervalId = null;
+                updateDisplay(index, "GO！", true);
+                playSound();
+            } else {
+                formatAndDisplay(index, timers[index].timeLeft);
+            }
+        }, 1000);
+    }
+
+    function resetTimer(index) {
+        if (timers[index].intervalId) {
+            clearInterval(timers[index].intervalId);
+            timers[index].intervalId = null;
+        }
+        timers[index].timeLeft = 0;
+        updateDisplay(index, "--:--", false);
+    }
+
+    function formatAndDisplay(index, totalSeconds) {
+        const min = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+        const sec = (totalSeconds % 60).toString().padStart(2, '0');
+        updateDisplay(index, `${min}:${sec}`, false);
+    }
+</script>
+
+</body>
+</html>
