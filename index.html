@@ -28,7 +28,6 @@
             transition: align-items 0.3s ease;
         }
 
-        /* PCにおける配置ルールの定義 */
         @media (min-width: 768px) {
             body.pos-left { align-items: flex-start; }
             body.pos-center { align-items: center; }
@@ -162,6 +161,12 @@
             border-radius: 6px;
             cursor: pointer;
             flex-shrink: 0;
+            transition: background-color 0.3s ease;
+        }
+
+        .main-btn.running {
+            background-color: var(--accent-pink) !important;
+            animation: btn-pulse 2s infinite ease-in-out;
         }
 
         .time-display {
@@ -171,6 +176,8 @@
             color: var(--accent-cyan);
             margin-left: auto;
             margin-right: 15px;
+            text-align: right;
+            white-space: nowrap;
         }
 
         .reset-btn {
@@ -189,9 +196,29 @@
             animation: pulse 1s infinite;
         }
 
+        .luck-text {
+            font-size: 15px;
+            font-weight: 900;
+            background: linear-gradient(to right, #ff3333, #ff8833, #ffff33, #33ff33, #33ffff, #3333ff, #ff33ff, #ff33ff);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: rainbow 1.2s linear infinite;
+        }
+
+        @keyframes rainbow {
+            0% { background-position: 0% center; }
+            100% { background-position: 200% center; }
+        }
+
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
+        }
+
+        @keyframes btn-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.85; }
         }
 
         #addArea {
@@ -267,8 +294,10 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
             font-size: 13px;
+            flex-wrap: wrap;
+            gap: 5px;
         }
 
         .clear-time-row:last-child {
@@ -278,7 +307,7 @@
         .clear-time-label {
             color: var(--sub-text);
             font-weight: bold;
-            max-width: 150px;
+            max-width: 100px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -287,19 +316,48 @@
         .clear-time-input-wrap {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 8px;
         }
 
         .clear-time-input-wrap input {
             background-color: var(--card-bg);
             border: 1px solid var(--accent-blue);
             color: white;
-            width: 50px;
+            width: 45px;
             font-size: 14px;
             padding: 4px;
             text-align: center;
             border-radius: 4px;
             outline: none;
+        }
+
+        .sound-select {
+            background-color: var(--card-bg);
+            border: 1px solid var(--accent-blue);
+            color: white;
+            font-size: 12px;
+            padding: 4px;
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .hear-btn {
+            background-color: #0f3460;
+            border: 1px solid var(--accent-cyan);
+            color: var(--accent-cyan);
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .sound-note {
+            font-size: 11px;
+            color: var(--accent-pink);
+            margin-top: 10px;
+            text-align: left;
+            font-weight: bold;
         }
 
         .audio-area {
@@ -380,36 +438,42 @@
         </div>
 
         <div class="clear-time-panel">
-            <div class="panel-title">⏱ 各ボタンのクリア時間設定</div>
+            <div class="panel-title">⏱ 各ボタンのクリア時間・通知音設定</div>
             <div id="clearTimeSettingsList"></div>
+            <div class="sound-note">✨ 通知音切り替え時にタイマーはリセットされます。</div>
         </div>
 
         <div class="audio-area">
             <div class="volume-container">
-                <label>通知音音量</label>
+                <label>全体通知音量</label>
                 <input type="range" id="volumeSlider" min="0" max="1" step="0.1" value="0.5">
             </div>
-            <button class="test-btn" onclick="playSound()">通知音テスト</button>
+            <button class="test-btn" onclick="playPresetSound('A')">全体の音量テスト</button>
         </div>
     </div>
 
 <script>
     const defaultData = [
-        { name: "N3-5", clearTime: 0 },
-        { name: "H2-5", clearTime: 0 },
-        { name: "T1-3", clearTime: 0 }
+        { name: "N3-5", clearTime: 0, soundType: "A" },
+        { name: "H2-5", clearTime: 0, soundType: "A" },
+        { name: "T1-3", clearTime: 0, soundType: "A" }
     ];
     let timerPresets = [];
     let runningTimers = {};
 
     window.onload = () => {
-        const saved = localStorage.getItem('tbh_timer_presets_v3');
+        const saved = localStorage.getItem('tbh_timer_presets_v4');
         if (saved) {
             timerPresets = JSON.parse(saved);
         } else {
-            const oldSaved = localStorage.getItem('tbh_timer_presets_v2');
+            const oldSaved = localStorage.getItem('tbh_timer_presets_v3');
             if (oldSaved) {
-                timerPresets = JSON.parse(oldSaved);
+                const oldData = JSON.parse(oldSaved);
+                timerPresets = oldData.map(item => ({
+                    name: item.name,
+                    clearTime: item.clearTime || 0,
+                    soundType: item.soundType || "A"
+                }));
             } else {
                 timerPresets = defaultData;
             }
@@ -443,7 +507,7 @@
             row.className = 'timer-row';
             row.innerHTML = `
                 <button class="del-btn" onclick="deleteTimer(${index})">✕</button>
-                <button class="main-btn" onclick="startTimer(${index})">${item.name}</button>
+                <button class="main-btn" id="btnPres-${index}" onclick="startTimer(${index})">${item.name}</button>
                 <span class="time-display" id="display-${index}">--:--</span>
                 <button class="reset-btn" onclick="resetTimer(${index})">リセット</button>
             `;
@@ -454,19 +518,32 @@
             configRow.innerHTML = `
                 <div class="clear-time-label">${item.name}</div>
                 <div class="clear-time-input-wrap">
-                    <span>クリア時間：</span>
-                    <input type="number" id="clearInput-${index}" value="${item.clearTime || 0}" min="0" onchange="updateClearTime(${index}, this.value)">
+                    <span>クリア:</span>
+                    <input type="number" id="clearInput-${index}" value="${item.clearTime || 0}" min="0" onchange="updatePresetData(${index}, 'time', this.value)">
                     <span>分</span>
+                    <select class="sound-select" id="soundSelect-${index}" onchange="updatePresetData(${index}, 'sound', this.value)">
+                        <option value="A" ${item.soundType === 'A' ? 'selected' : ''}>標準音</option>
+                        <option value="C" ${item.soundType === 'C' ? 'selected' : ''}>和音</option>
+                        <option value="D" ${item.soundType === 'D' ? 'selected' : ''}>ロング</option>
+                        <option value="E" ${item.soundType === 'E' ? 'selected' : ''}>警告音</option>
+                        <option value="F" ${item.soundType === 'F' ? 'selected' : ''}>ドロップ音</option>
+                    </select>
+                    <button class="hear-btn" onclick="playPresetSound('${item.soundType || 'A'}')">試聴</button>
                 </div>
             `;
             configList.appendChild(configRow);
         });
     }
 
-    function updateClearTime(index, value) {
-        const minutes = parseInt(value) || 0;
-        timerPresets[index].clearTime = minutes;
-        localStorage.setItem('tbh_timer_presets_v3', JSON.stringify(timerPresets));
+    function updatePresetData(index, type, value) {
+        if (type === 'time') {
+            timerPresets[index].clearTime = parseInt(value) || 0;
+        } else if (type === 'sound') {
+            timerPresets[index].soundType = value;
+            resetTimer(index);
+        }
+        localStorage.setItem('tbh_timer_presets_v4', JSON.stringify(timerPresets));
+        if (type === 'sound') renderApp();
     }
 
     function toggleEditMode() {
@@ -480,7 +557,7 @@
     function addNewTimer() {
         const name = prompt("ボタンに表示する名前を入力してください", "新タイマー");
         if (name) {
-            timerPresets.push({ name: name, clearTime: 0 });
+            timerPresets.push({ name: name, clearTime: 0, soundType: "A" });
             saveAndRender();
         }
     }
@@ -494,7 +571,7 @@
     }
 
     function saveAndRender() {
-        localStorage.setItem('tbh_timer_presets_v3', JSON.stringify(timerPresets));
+        localStorage.setItem('tbh_timer_presets_v4', JSON.stringify(timerPresets));
         renderApp();
     }
 
@@ -510,6 +587,9 @@
         if (targetMinutes < 0) targetMinutes = 0;
         
         let timeLeft = targetMinutes * 60;
+
+        const btn = document.getElementById(`btnPres-${index}`);
+        if (btn) btn.classList.add('running');
 
         updateDisplay(index, timeLeft);
 
@@ -532,11 +612,23 @@
 
     function triggerGo(index) {
         const display = document.getElementById(`display-${index}`);
-        if (display) {
+        if (!display) return;
+
+        const btn = document.getElementById(`btnPres-${index}`);
+        if (btn) btn.classList.remove('running');
+
+        const roll = Math.floor(Math.random() * 100) + 1;
+        const soundType = timerPresets[index].soundType || "A";
+
+        if (roll === 77) { 
+            display.innerText = "GOOD LUCK‼";
+            display.className = "time-display luck-text";
+        } else {
             display.innerText = "GO！";
-            display.classList.add('go-text');
+            display.className = "time-display go-text";
         }
-        playSound();
+        
+        playPresetSound(soundType);
     }
 
     function resetTimer(index) {
@@ -544,10 +636,14 @@
             clearInterval(runningTimers[index]);
             delete runningTimers[index];
         }
+        
+        const btn = document.getElementById(`btnPres-${index}`);
+        if (btn) btn.classList.remove('running');
+
         const display = document.getElementById(`display-${index}`);
         if (display) {
             display.innerText = "--:--";
-            display.classList.remove('go-text');
+            display.className = "time-display";
         }
     }
 
@@ -557,28 +653,63 @@
         const m = Math.floor(seconds / 60).toString().padStart(2, '0');
         const s = (seconds % 60).toString().padStart(2, '0');
         display.innerText = `${m}:${s}`;
-        display.classList.remove('go-text');
+        display.className = "time-display";
     }
 
-    function playSound() {
+    // 巻き戻し箇所：最も初期の安定して音が鳴っていたAudio再生ロジック
+    function playPresetSound(type) {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const volume = parseFloat(document.getElementById('volumeSlider').value);
-        const notes = [659.25, 783.99, 1046.50]; 
-        const durations = [0.12, 0.12, 0.25];
+        
+        let notes = [];
+        let durations = [];
+        let waveType = 'triangle';
+        let speed = 80;
+
+        if (type === 'C') { 
+            notes = [523.25, 659.25, 0, 523.25, 659.25]; 
+            durations = [0.2, 0.2, 0.1, 0.2, 0.2];
+            waveType = 'triangle';
+            speed = 200;
+        } else if (type === 'D') { 
+            notes = [523.25, 587.33, 659.25, 698.46, 783.99, 880.00, 987.77, 1046.50];
+            durations = [0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.4];
+            waveType = 'sine';
+            speed = 60;
+        } else if (type === 'E') { 
+            notes = [220, 220, 0, 220, 220]; 
+            durations = [0.1, 0.1, 0.08, 0.1, 0.1];
+            waveType = 'sawtooth'; 
+            speed = 90;
+        } else if (type === 'F') { 
+            notes = [880.00, 1318.51, 1760.00]; 
+            durations = [0.05, 0.08, 0.4];
+            waveType = 'sine'; 
+            speed = 50;
+        } else { 
+            notes = [659.25, 783.99, 1046.50]; 
+            durations = [0.12, 0.12, 0.25];
+            waveType = 'triangle';
+            speed = 80;
+        }
 
         notes.forEach((freq, i) => {
+            if (freq === 0) return; 
             setTimeout(() => {
                 const oscillator = audioCtx.createOscillator();
                 const gainNode = audioCtx.createGain();
-                oscillator.type = 'triangle';
+                oscillator.type = waveType;
                 oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime);
-                gainNode.gain.setValueAtTime(volume * 0.2, audioCtx.currentTime);
+                
+                const modVol = type === 'E' ? 0.12 : 0.2;
+                gainNode.gain.setValueAtTime(volume * modVol, audioCtx.currentTime);
                 gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + durations[i]);
+                
                 oscillator.connect(gainNode);
                 gainNode.connect(audioCtx.destination);
                 oscillator.start();
                 oscillator.stop(audioCtx.currentTime + durations[i]);
-            }, i * 80);
+            }, i * speed);
         });
     }
 </script>
