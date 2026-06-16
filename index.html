@@ -329,20 +329,20 @@
             <div class="time-stamp" id="invDisplay">--:--</div>
         </div>
 
-        <div class="result-panel panel-white">
-            <div class="result-info">
-                <div class="result-title">⬜ 白箱保管枠が埋まる時刻</div>
-                <div class="duration-hint" id="whiteHint">（残り --時間--分）</div>
-            </div>
-            <div class="time-stamp" id="whiteDisplay">--:--</div>
-        </div>
-
         <div class="result-panel panel-blue">
             <div class="result-info">
                 <div class="result-title">🔥 青箱保管枠が埋まる時刻</div>
                 <div class="duration-hint" id="blueHint">（残り --時間--分）</div>
             </div>
             <div class="time-stamp" id="blueDisplay">--:--</div>
+        </div>
+
+        <div class="result-panel panel-white">
+            <div class="result-info">
+                <div class="result-title">⬜ 白箱保管枠が埋まる時刻</div>
+                <div class="duration-hint" id="whiteHint">（残り --時間--分）</div>
+            </div>
+            <div class="time-stamp" id="whiteDisplay">--:--</div>
         </div>
     </div>
 </div>
@@ -359,13 +359,13 @@
             const inputEl = document.getElementById(id);
             if (!inputEl) return;
 
-            const savedValue = localStorage.getItem('tbh_timer_' + id);
+            const savedValue = localStorage.getItem('tbh_timer_v3_' + id);
             if (savedValue !== null) {
                 inputEl.value = savedValue;
             }
 
             inputEl.addEventListener('input', () => {
-                localStorage.setItem('tbh_timer_' + id, inputEl.value);
+                localStorage.setItem('tbh_timer_v3_' + id, inputEl.value);
             });
         });
     });
@@ -386,7 +386,6 @@
         const totalWhiteStorage = 5 + whiteMaxAdd;
         const totalBlueStorage = 5 + blueMaxAdd;
 
-        // 箱を開けるのに必要な秒数
         const actualWhiteOpen = Math.max(1, 300 - whiteOpenReduce); 
         const actualBlueOpen = Math.max(1, 600 - blueOpenReduce);   
 
@@ -394,9 +393,8 @@
         const blueCoolDown = blueCTMin * 60;      
 
         let currentSeconds = 0;
-        let inventoryCount = 0; // 開封された中身が入る共通インベントリ
+        let inventoryCount = 0; 
 
-        // 各保管枠の中身（未開封の箱の残り開封時間リストが入る）
         let whiteStorageQueue = [];
         let blueStorageQueue = [];
 
@@ -406,13 +404,12 @@
 
         let lastBlueDropTime = -blueCoolDown; 
 
-        // 【仕様再現】開始（0秒）時点で白箱の1個目がドロップ、白保管枠に入る
+        // 仕様準拠：0秒時点で最初の白箱ドロップ
         whiteStorageQueue.push(actualWhiteOpen);
 
         while (currentSeconds < 172800) {
             currentSeconds++;
 
-            // 1. 各保管枠の「先頭の1個だけ」タイマーを1秒進める
             if (whiteStorageQueue.length > 0) {
                 whiteStorageQueue[0]--;
             }
@@ -420,18 +417,14 @@
                 blueStorageQueue[0]--;
             }
 
-            // 2. 白箱の開封完了チェック
             if (whiteStorageQueue.length > 0 && whiteStorageQueue[0] <= 0) {
-                // インベントリに空きがあるか確認
                 if (inventoryCount < totalInv) {
-                    whiteStorageQueue.shift(); // 保管枠からハケる
-                    inventoryCount++; // 共通インベントリへ
+                    whiteStorageQueue.shift(); 
+                    inventoryCount++; 
                     if (inventoryCount >= totalInv && invLimitSec === Infinity) invLimitSec = currentSeconds;
                 }
-                // インベントリ満杯なら shift せず、タイマー0のまま先頭に固定（開封処理が詰まる）
             }
 
-            // 3. 青箱の開封完了チェック
             if (blueStorageQueue.length > 0 && blueStorageQueue[0] <= 0) {
                 if (inventoryCount < totalInv) {
                     blueStorageQueue.shift(); 
@@ -440,17 +433,14 @@
                 }
             }
 
-            // 4. 白箱ドロップ（純粋時間経過）
             if (currentSeconds > 0 && currentSeconds % whiteCoolDown === 0) {
                 if (whiteStorageQueue.length < totalWhiteStorage) {
                     whiteStorageQueue.push(actualWhiteOpen);
                 } else {
-                    // ドロップした瞬間に保管枠が溢れていたらアウト
                     if (whiteLimitSec === Infinity) whiteLimitSec = currentSeconds;
                 }
             }
 
-            // 5. 青箱ドロップ（ボス撃破）
             if (currentSeconds > 0 && currentSeconds % clearTime === 0) {
                 if (currentSeconds - lastBlueDropTime >= blueCoolDown) {
                     if (blueStorageQueue.length < totalBlueStorage) {
@@ -462,16 +452,16 @@
                 }
             }
 
-            // 全て埋まったら終了
             if (invLimitSec !== Infinity && whiteLimitSec !== Infinity && blueLimitSec !== Infinity) break;
         }
 
         const now = new Date();
         document.getElementById('startTimeLog').innerText = `計測開始時刻 ➔ ${formatDate(now)}`;
 
+        // 正しいIDに紐づけて出力
         renderRow(now, invLimitSec, 'invDisplay', 'invHint');
-        renderRow(now, whiteLimitSec, 'whiteDisplay', 'whiteHint');
         renderRow(now, blueLimitSec, 'blueDisplay', 'blueHint');
+        renderRow(now, whiteLimitSec, 'whiteDisplay', 'whiteHint');
     }
 
     function renderRow(nowDate, limitSeconds, displayId, hintId) {
