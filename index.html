@@ -3,377 +3,716 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TBHインベントリ限界タイマー (ロジック修正版)</title>
+    <title>TBH青箱ドロップ間隔タイマー</title>
     <style>
         :root {
-            --bg-color: #0b0c10;
-            --card-bg: #141622;
-            --panel-bg: #0f111a;
-            --accent-cyan: #06b6d4;
-            --accent-blue: #3b82f6;
-            --accent-orange: #f97316;
-            --accent-pink: #ec4899;
-            --accent-purple: #8b5cf6;
-            --text-main: #f3f4f6;
-            --text-sub: #9ca3af;
-            --border-color: #222538;
+            --bg-color: #1a1a2e;
+            --card-bg: #16213e;
+            --accent-blue: #4361ee;
+            --accent-cyan: #4cc9f0;
+            --accent-pink: #f72585;
+            --accent-green: #23d160;
+            --text-color: #e0e0e0;
+            --sub-text: #a2a8d3;
         }
 
         body {
-            font-family: 'Segoe UI', Meiryo, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
+            font-family: 'Segoe UI', 'Meiryo', sans-serif;
             margin: 0;
-            padding: 8px;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            align-items: center;
+            transition: align-items 0.3s ease;
         }
 
-        .container {
-            max-width: 440px;
-            width: 100%;
+        @media (min-width: 768px) {
+            body.pos-left { align-items: flex-start; }
+            body.pos-center { align-items: center; }
+            body.pos-right { align-items: flex-end; }
+        }
+
+        .app-card {
             background-color: var(--card-bg);
-            border-radius: 10px;
-            padding: 12px 16px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
-            border: 1px solid #1e2235;
+            max-width: 500px;
+            width: 100%;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid #0f3460;
+            position: relative;
             box-sizing: border-box;
+        }
+
+        .edit-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: 1px solid var(--accent-cyan);
+            color: var(--accent-cyan);
+            padding: 5px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+            z-index: 10;
+        }
+        .edit-toggle.active {
+            background-color: var(--accent-cyan);
+            color: var(--card-bg);
+            font-weight: bold;
         }
 
         h1 {
             text-align: center;
-            font-size: 15px;
-            margin: 0 0 6px 0;
+            font-size: 20px;
+            margin: 0 0 20px 0;
             color: var(--accent-cyan);
-            letter-spacing: 0.5px;
-            font-weight: 800;
+            padding-right: 60px;
+            word-break: break-all;
         }
 
-        .section-box {
-            background-color: var(--panel-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 6px 10px;
-            margin-bottom: 6px;
+        .instructions {
+            background-color: #0f3460;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.5;
+            margin-bottom: 20px;
+            color: var(--sub-text);
         }
 
-        .section-title {
-            font-size: 10px;
-            font-weight: bold;
-            text-transform: uppercase;
-            margin-bottom: 4px;
-            color: var(--text-sub);
+        .instructions ul {
+            margin: 5px 0;
+            padding-left: 20px;
         }
-        .title-blue { color: var(--accent-blue); border-left: 3px solid var(--accent-blue); padding-left: 5px; }
-        .title-white { color: #e5e7eb; border-left: 3px solid #e5e7eb; padding-left: 5px; }
-        .title-base { color: var(--accent-cyan); border-left: 3px solid var(--accent-cyan); padding-left: 5px; }
 
-        .input-row-layout {
+        .settings-area {
+            background-color: var(--bg-color);
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 10px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: center;
             gap: 10px;
-            margin-bottom: 3px;
+            border: 1px dashed var(--accent-blue);
         }
 
-        .input-row-layout label {
+        .settings-area label {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .settings-area input {
+            background-color: var(--card-bg);
+            border: 2px solid var(--accent-blue);
+            color: white;
+            width: 60px;
+            font-size: 18px;
+            font-weight: bold;
+            padding: 5px;
+            text-align: center;
+            border-radius: 6px;
+            outline: none;
+        }
+
+        #timerList {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .timer-row {
+            display: flex;
+            align-items: center;
+            background-color: var(--bg-color);
+            padding: 8px 12px;
+            border-radius: 10px;
+            border-left: 4px solid var(--accent-blue);
+            min-height: 50px;
+        }
+
+        .del-btn {
+            display: none;
+            background-color: #ff4d4d;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+
+        .main-btn {
+            background-color: var(--accent-blue);
+            color: white;
+            border: none;
+            font-size: 14px;
+            font-weight: bold;
+            padding: 8px 12px;
+            min-width: 85px;
+            border-radius: 6px;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: background-color 0.3s ease;
+        }
+
+        .main-btn.running {
+            background-color: var(--accent-pink) !important;
+            animation: btn-pulse 2s infinite ease-in-out;
+        }
+
+        .time-display {
+            font-size: 22px;
+            font-weight: bold;
+            font-family: 'Courier New', Courier, monospace;
+            color: var(--accent-cyan);
+            margin-left: auto;
+            margin-right: 15px;
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .reset-btn {
+            background-color: #e0e0e0;
+            color: #333;
+            border: none;
             font-size: 11px;
             font-weight: bold;
-            color: #d1d5db;
+            padding: 5px 8px;
+            border-radius: 4px;
+            cursor: pointer;
         }
 
-        .input-field-wrap {
+        .go-text {
+            color: var(--accent-pink) !important;
+            animation: pulse 1s infinite;
+        }
+
+        .luck-text {
+            font-size: 15px;
+            font-weight: 900;
+            background: linear-gradient(to right, #ff3333, #ff8833, #ffff33, #33ff33, #33ffff, #3333ff, #ff33ff, #ff33ff);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: rainbow 1.2s linear infinite;
+        }
+
+        @keyframes rainbow {
+            0% { background-position: 0% center; }
+            100% { background-position: 200% center; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes btn-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.85; }
+        }
+
+        #addArea {
+            display: none;
+            margin-top: 15px;
+            text-align: center;
+        }
+        .add-btn {
+            background-color: var(--accent-green);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+
+        .position-controller {
+            display: none;
+            background-color: var(--bg-color);
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #0f3460;
+            margin-bottom: 15px;
+        }
+        .position-controller-title {
+            font-size: 12px;
+            color: var(--sub-text);
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        .pos-btn-group {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
+        .pos-btn {
+            background-color: var(--card-bg);
+            border: 1px solid var(--accent-blue);
+            color: var(--sub-text);
+            font-size: 12px;
+            padding: 5px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .pos-btn.active {
+            background-color: var(--accent-blue);
+            color: white;
+            font-weight: bold;
+        }
+
+        .clear-time-panel {
+            margin-top: 25px;
+            padding: 15px;
+            background-color: var(--bg-color);
+            border-radius: 12px;
+            border: 1px solid #0f3460;
+        }
+
+        .panel-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--accent-cyan);
+            margin-bottom: 12px;
+            text-align: center;
+            border-bottom: 1px solid #0f3460;
+            padding-bottom: 5px;
+        }
+
+        .clear-time-row {
             display: flex;
             align-items: center;
-            gap: 4px;
-            justify-content: flex-end;
-            width: 160px;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 13px;
+            flex-wrap: wrap;
+            gap: 5px;
         }
 
-        .input-field-wrap input {
-            background-color: #1c1e2e;
-            border: 1px solid var(--border-color);
-            color: white;
-            width: 55px;
-            font-size: 12px;
+        .clear-time-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .clear-time-label {
+            color: var(--sub-text);
             font-weight: bold;
-            padding: 2px 4px;
+            max-width: 100px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .clear-time-input-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .clear-time-input-wrap input {
+            background-color: var(--card-bg);
+            border: 1px solid var(--accent-blue);
+            color: white;
+            width: 45px;
+            font-size: 14px;
+            padding: 4px;
             text-align: center;
             border-radius: 4px;
             outline: none;
         }
 
-        .input-field-wrap span {
-            font-size: 10px;
-            color: var(--text-sub);
-            white-space: nowrap;
-            width: 45px;
-        }
-
-        .btn {
-            width: 100%;
-            padding: 10px;
-            font-size: 14px;
-            font-weight: bold;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+        .sound-select {
+            background-color: var(--card-bg);
+            border: 1px solid var(--accent-blue);
             color: white;
-            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.2);
-            margin: 10px 0 6px 0;
+            font-size: 12px;
+            padding: 4px;
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
         }
 
-        .start-time-log {
-            text-align: center;
+        .hear-btn {
+            background-color: #0f3460;
+            border: 1px solid var(--accent-cyan);
+            color: var(--accent-cyan);
             font-size: 11px;
-            color: var(--accent-purple);
-            margin-bottom: 6px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .sound-note {
+            font-size: 11px;
+            color: var(--accent-pink);
+            margin-top: 10px;
+            text-align: left;
             font-weight: bold;
-            min-height: 14px;
         }
 
-        .result-panel {
-            background-color: #0b0c10;
-            border-radius: 5px;
-            padding: 6px 12px;
+        .audio-area {
+            margin-top: 25px;
+            padding-top: 15px;
+            border-top: 1px solid #0f3460;
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
             align-items: center;
-            border: 1px solid #1a1c2c;
-            margin-bottom: 5px;
+            gap: 12px;
         }
-        .panel-inv { border-left: 4px solid var(--accent-blue); }
-        .panel-blue { border-left: 4px solid var(--accent-pink); }
-        .panel-white { border-left: 4px solid var(--accent-orange); }
 
-        .result-title { font-size: 11px; color: var(--text-sub); font-weight: bold; }
-        .panel-blue .result-title { color: #f472b6; }
-        .panel-white .result-title { color: #fdba74; }
-        .duration-hint { font-size: 10px; color: #6b7280; margin-top: 1px; }
-        .time-stamp { font-size: 20px; font-weight: bold; font-family: 'Courier New', monospace; }
-        .panel-inv .time-stamp { color: #93c5fd; }
-        .panel-blue .time-stamp { color: #f472b6; }
-        .panel-white .time-stamp { color: #fdba74; }
+        .volume-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+        }
+
+        input[type="range"] {
+            width: 120px;
+            cursor: pointer;
+        }
+
+        .test-btn {
+            background-color: var(--accent-green);
+            color: white;
+            border: none;
+            font-size: 13px;
+            font-weight: bold;
+            padding: 6px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .is-editing .del-btn { display: inline-block; }
+        .is-editing #addArea { display: block; }
+        .is-editing .main-btn { filter: grayscale(1); pointer-events: none; }
+        
+        @media (min-width: 768px) {
+            .is-editing .position-controller { display: block; }
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>⏳ TBHインベントリ限界タイマー (修正版)</h1>
+    <div class="app-card" id="appCard">
+        <button class="edit-toggle" id="editToggle" onclick="toggleEditMode()">編集</button>
+        <h1>TBH青箱ドロップ間隔タイマー</h1>
 
-    <div class="section-box">
-        <div class="section-title title-base">基礎設定</div>
-        <div class="input-row-layout">
-            <label>クリア時間</label>
-            <div class="input-field-wrap">
-                <input type="number" id="clearTime" value="210" min="1">
-                <span>秒</span>
+        <div class="instructions">
+            <strong>【使い方】</strong>
+            <ul>
+                <li>下の入力欄に「ドロップ間隔」を設定します。</li>
+                <li>各ボタンを押すとカウントダウンが始まります。</li>
+            </ul>
+        </div>
+
+        <div class="settings-area">
+            <label for="intervalInput">宝箱ドロップ間隔：</label>
+            <input type="number" id="intervalInput" value="13" min="1">
+            <span>分</span>
+        </div>
+
+        <div id="timerList"></div>
+
+        <div id="addArea">
+            <button class="add-btn" onclick="addNewTimer()">➕ 新規ボタンを追加</button>
+            
+            <div class="position-controller">
+                <div class="position-controller-title">💻 PC限定：アプリの表示位置</div>
+                <div class="pos-btn-group">
+                    <button class="pos-btn" id="pos-left" onclick="changePosition('left')">左寄せ</button>
+                    <button class="pos-btn" id="pos-center" onclick="changePosition('center')">中央</button>
+                    <button class="pos-btn" id="pos-right" onclick="changePosition('right')">右寄せ</button>
+                </div>
             </div>
         </div>
-        <div class="input-row-layout">
-            <label>追加インベントリ枠</label>
-            <div class="input-field-wrap">
-                <input type="number" id="addInv" value="84" min="0">
-                <span>枠</span>
+
+        <div class="clear-time-panel">
+            <div class="panel-title">⏱ 各ボタンのクリア時間・通知音設定</div>
+            <div id="clearTimeSettingsList"></div>
+            <div class="sound-note">✨ 通知音切り替え時にタイマーはリセットされます。</div>
+        </div>
+
+        <div class="audio-area">
+            <div class="volume-container">
+                <label>全体通知音量</label>
+                <input type="range" id="volumeSlider" min="0" max="1" step="0.1" value="0.5">
             </div>
+            <button class="test-btn" onclick="playPresetSound('A')">全体の音量テスト</button>
         </div>
     </div>
-
-    <div class="section-box">
-        <div class="section-title title-blue">🟦 青箱設定 (初期: 600秒 / 保管: 5)</div>
-        <div class="input-row-layout">
-            <label>ドロップ間隔CT</label>
-            <div class="input-field-wrap">
-                <input type="number" id="blueCT" value="7" min="1">
-                <span>分</span>
-            </div>
-        </div>
-        <div class="input-row-layout">
-            <label>自動開封短縮</label>
-            <div class="input-field-wrap">
-                <input type="number" id="blueOpenReduce" value="55" min="0">
-                <span>秒短縮</span>
-            </div>
-        </div>
-        <div class="input-row-layout">
-            <label>追加保管数</label>
-            <div class="input-field-wrap">
-                <input type="number" id="blueMax" value="6" min="0">
-                <span>個拡張</span>
-            </div>
-        </div>
-    </div>
-
-    <div class="section-box">
-        <div class="section-title title-white">⬜ 白箱設定 (初期: 300秒 / 保管: 5)</div>
-        <div class="input-row-layout">
-            <label>ドロップ間隔CT</label>
-            <div class="input-field-wrap">
-                <input type="number" id="whiteCT" value="5" min="1">
-                <span>分</span>
-            </div>
-        </div>
-        <div class="input-row-layout">
-            <label>自動開封短縮</label>
-            <div class="input-field-wrap">
-                <input type="number" id="whiteOpenReduce" value="29" min="0">
-                <span>秒短縮</span>
-            </div>
-        </div>
-        <div class="input-row-layout">
-            <label>追加保管数</label>
-            <div class="input-field-wrap">
-                <input type="number" id="whiteMax" value="12" min="0">
-                <span>個拡張</span>
-            </div>
-        </div>
-    </div>
-
-    <button class="btn" onclick="calculateLimitTime()">⚔️ 最短時刻を計測開始</button>
-    <div class="start-time-log" id="startTimeLog"></div>
-
-    <div class="result-list">
-        <div class="result-panel panel-inv">
-            <div class="result-info">
-                <div class="result-title">📦 インベントリが埋まる時刻</div>
-                <div class="duration-hint" id="invHint">（残り --時間--分）</div>
-            </div>
-            <div class="time-stamp" id="invDisplay">--:--</div>
-        </div>
-
-        <div class="result-panel panel-blue">
-            <div class="result-info">
-                <div class="result-title">🔥 青箱保管枠が埋まる時刻</div>
-                <div class="duration-hint" id="blueHint">（残り --時間--分）</div>
-            </div>
-            <div class="time-stamp" id="blueDisplay">--:--</div>
-        </div>
-
-        <div class="result-panel panel-white">
-            <div class="result-info">
-                <div class="result-title">⬜ 白箱保管枠が埋まる時刻</div>
-                <div class="duration-hint" id="whiteHint">（残り --時間--分）</div>
-            </div>
-            <div class="time-stamp" id="whiteDisplay">--:--</div>
-        </div>
-    </div>
-</div>
 
 <script>
-    function calculateLimitTime() {
-        const clearTime = parseInt(document.getElementById('clearTime').value) || 210;
-        const addInv = parseInt(document.getElementById('addInv').value) || 84;
-        
-        const blueCT = (parseInt(document.getElementById('blueCT').value) || 7) * 60;
-        const whiteCT = (parseInt(document.getElementById('whiteCT').value) || 5) * 60;
-        
-        const blueOpenTime = Math.max(1, 600 - (parseInt(document.getElementById('blueOpenReduce').value) || 55));
-        const whiteOpenTime = Math.max(1, 300 - (parseInt(document.getElementById('whiteOpenReduce').value) || 29));
-        
-        const maxInv = 20 + addInv;
-        const maxBlueStorage = 5 + (parseInt(document.getElementById('blueMax').value) || 6);
-        const maxWhiteStorage = 5 + (parseInt(document.getElementById('whiteMax').value) || 12);
+    const defaultData = [
+        { name: "N3-5", clearTime: 0, soundType: "A" },
+        { name: "H2-5", clearTime: 0, soundType: "A" },
+        { name: "T1-3", clearTime: 0, soundType: "A" }
+    ];
+    let timerPresets = [];
+    let runningTimers = {};
 
-        let currentSec = 0;
-        let invCount = 0;
-
-        // 保管枠のシミュレート（配列の中身は「自動開封完了までの残り秒数」）
-        let whiteStorage = [];
-        let blueStorage = [];
-
-        let invFullSec = -1;
-        let blueFullSec = -1;
-        let whiteFullSec = -1;
-
-        let lastBlueDrop = -blueCT;
-
-        // 0秒時点の初期ドロップ
-        if (whiteStorage.length < maxWhiteStorage) whiteStorage.push(whiteOpenTime);
-
-        // 最大48時間シミュレート
-        while (currentSec < 172800) {
-            currentSec++;
-
-            // 1秒経過処理（各保管枠の先頭の開封タイマーを進める）
-            // ただし、インベントリが満杯の場合は、開封が完了してもインベントリに吸い込まれずスタックが詰まる
-            let invHasSpace = (invCount < maxInv);
-
-            if (whiteStorage.length > 0) {
-                if (whiteStorage[0] > 0) {
-                    whiteStorage[0]--;
-                } else if (invHasSpace) {
-                    // 開封完了していてインベントリに空きがあれば吸い込まれる
-                    whiteStorage.shift();
-                    invCount++;
-                }
+    window.onload = () => {
+        const saved = localStorage.getItem('tbh_timer_presets_v4');
+        if (saved) {
+            timerPresets = JSON.parse(saved);
+        } else {
+            const oldSaved = localStorage.getItem('tbh_timer_presets_v3');
+            if (oldSaved) {
+                const oldData = JSON.parse(oldSaved);
+                timerPresets = oldData.map(item => ({
+                    name: item.name,
+                    clearTime: item.clearTime || 0,
+                    soundType: item.soundType || "A"
+                }));
+            } else {
+                timerPresets = defaultData;
             }
-
-            // インベントリの空き状況を再更新
-            invHasSpace = (invCount < maxInv);
-
-            if (blueStorage.length > 0) {
-                if (blueStorage[0] > 0) {
-                    blueStorage[0]--;
-                } else if (invHasSpace) {
-                    blueStorage.shift();
-                    invCount++;
-                }
-            }
-
-            // インベントリ満杯の判定
-            if (invCount >= maxInv && invFullSec === -1) {
-                invFullSec = currentSec;
-            }
-
-            // 白箱のドロップ判定 (5分毎)
-            if (currentSec % whiteCT === 0) {
-                if (whiteStorage.length < maxWhiteStorage) {
-                    whiteStorage.push(whiteOpenTime);
-                } else {
-                    if (whiteFullSec === -1) whiteFullSec = currentSec;
-                }
-            }
-
-            // 青箱のドロップ判定 (クリア時かつCT開け)
-            if (currentSec % clearTime === 0) {
-                if (currentSec - lastBlueDrop >= blueCT) {
-                    if (blueStorage.length < maxBlueStorage) {
-                        blueStorage.push(blueOpenTime);
-                        lastBlueDrop = currentSec;
-                    } else {
-                        if (blueFullSec === -1) blueFullSec = currentSec;
-                    }
-                }
-            }
-
-            // すべて埋まる時刻が確定したら終了
-            if (invFullSec !== -1 && blueFullSec !== -1 && whiteFullSec !== -1) break;
         }
+        renderApp();
 
-        const now = new Date();
-        document.getElementById('startTimeLog').innerText = `計測開始時刻 ➔ ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
+        const savedPos = localStorage.getItem('tbh_timer_position') || 'center';
+        changePosition(savedPos);
+    };
 
-        renderRow(now, invFullSec, 'invDisplay', 'invHint');
-        renderRow(now, blueFullSec, 'blueDisplay', 'blueHint');
-        renderRow(now, whiteFullSec, 'whiteDisplay', 'whiteHint');
+    function changePosition(pos) {
+        document.body.classList.remove('pos-left', 'pos-center', 'pos-right');
+        document.body.classList.add(`pos-${pos}`);
+
+        document.querySelectorAll('.pos-btn').forEach(btn => btn.classList.remove('active'));
+        const activeBtn = document.getElementById(`pos-${pos}`);
+        if (activeBtn) activeBtn.classList.add('active');
+
+        localStorage.setItem('tbh_timer_position', pos);
     }
 
-    function renderRow(nowDate, limitSeconds, displayId, hintId) {
-        if (limitSeconds === -1 || limitSeconds === Infinity) {
-            document.getElementById(displayId).innerText = "∞";
-            document.getElementById(hintId).innerText = "（永続セーフ）";
+    function renderApp() {
+        const list = document.getElementById('timerList');
+        const configList = document.getElementById('clearTimeSettingsList');
+        
+        list.innerHTML = "";
+        configList.innerHTML = "";
+        
+        timerPresets.forEach((item, index) => {
+            const row = document.createElement('div');
+            row.className = 'timer-row';
+            row.innerHTML = `
+                <button class="del-btn" onclick="deleteTimer(${index})">✕</button>
+                <button class="main-btn" id="btnPres-${index}" onclick="startTimer(${index})">${item.name}</button>
+                <span class="time-display" id="display-${index}">--:--</span>
+                <button class="reset-btn" onclick="resetTimer(${index})">リセット</button>
+            `;
+            list.appendChild(row);
+
+            const configRow = document.createElement('div');
+            configRow.className = 'clear-time-row';
+            configRow.innerHTML = `
+                <div class="clear-time-label">${item.name}</div>
+                <div class="clear-time-input-wrap">
+                    <span>クリア:</span>
+                    <input type="number" id="clearInput-${index}" value="${item.clearTime || 0}" min="0" onchange="updatePresetData(${index}, 'time', this.value)">
+                    <span>分</span>
+                    <select class="sound-select" id="soundSelect-${index}" onchange="updatePresetData(${index}, 'sound', this.value)">
+                        <option value="A" ${item.soundType === 'A' ? 'selected' : ''}>標準音</option>
+                        <option value="C" ${item.soundType === 'C' ? 'selected' : ''}>和音</option>
+                        <option value="D" ${item.soundType === 'D' ? 'selected' : ''}>ロング</option>
+                        <option value="E" ${item.soundType === 'E' ? 'selected' : ''}>警告音</option>
+                        <option value="F" ${item.soundType === 'F' ? 'selected' : ''}>ドロップ音</option>
+                    </select>
+                    <button class="hear-btn" onclick="playPresetSound('${item.soundType || 'A'}')">試聴</button>
+                </div>
+            `;
+            configList.appendChild(configRow);
+        });
+    }
+
+    function updatePresetData(index, type, value) {
+        if (type === 'time') {
+            timerPresets[index].clearTime = parseInt(value) || 0;
+        } else if (type === 'sound') {
+            timerPresets[index].soundType = value;
+            resetTimer(index);
+        }
+        localStorage.setItem('tbh_timer_presets_v4', JSON.stringify(timerPresets));
+        if (type === 'sound') renderApp();
+    }
+
+    function toggleEditMode() {
+        const card = document.getElementById('appCard');
+        const btn = document.getElementById('editToggle');
+        const isEditing = card.classList.toggle('is-editing');
+        btn.innerText = isEditing ? "完了" : "編集";
+        btn.classList.toggle('active', isEditing);
+    }
+
+    function addNewTimer() {
+        const name = prompt("ボタンに表示する名前を入力してください", "新タイマー");
+        if (name) {
+            timerPresets.push({ name: name, clearTime: 0, soundType: "A" });
+            saveAndRender();
+        }
+    }
+
+    function deleteTimer(index) {
+        if (confirm(`「${timerPresets[index].name}」を削除しますか？`)) {
+            resetTimer(index);
+            timerPresets.splice(index, 1);
+            saveAndRender();
+        }
+    }
+
+    function saveAndRender() {
+        localStorage.setItem('tbh_timer_presets_v4', JSON.stringify(timerPresets));
+        renderApp();
+    }
+
+    function startTimer(index) {
+        if (runningTimers[index]) {
+            clearInterval(runningTimers[index]);
+        }
+
+        const baseMinutes = parseInt(document.getElementById('intervalInput').value) || 13;
+        const minusMinutes = timerPresets[index].clearTime || 0;
+
+        let targetMinutes = baseMinutes - minusMinutes;
+        if (targetMinutes < 0) targetMinutes = 0;
+        
+        let timeLeft = targetMinutes * 60;
+
+        const btn = document.getElementById(`btnPres-${index}`);
+        if (btn) btn.classList.add('running');
+
+        updateDisplay(index, timeLeft);
+
+        if (timeLeft <= 0) {
+            triggerGo(index);
             return;
         }
-        const targetDate = new Date(nowDate.getTime() + limitSeconds * 1000);
-        const h = targetDate.getHours().toString().padStart(2, '0');
-        const m = targetDate.getMinutes().toString().padStart(2, '0');
-        document.getElementById(displayId).innerText = `${h}:${m}`;
+
+        runningTimers[index] = setInterval(() => {
+            timeLeft--;
+            updateDisplay(index, timeLeft);
+
+            if (timeLeft <= 0) {
+                clearInterval(runningTimers[index]);
+                delete runningTimers[index];
+                triggerGo(index);
+            }
+        }, 1000);
+    }
+
+    function triggerGo(index) {
+        const display = document.getElementById(`display-${index}`);
+        if (!display) return;
+
+        const btn = document.getElementById(`btnPres-${index}`);
+        if (btn) btn.classList.remove('running');
+
+        const roll = Math.floor(Math.random() * 100) + 1;
+        const soundType = timerPresets[index].soundType || "A";
+
+        if (roll === 77) { 
+            display.innerText = "GOOD LUCK‼";
+            display.className = "time-display luck-text";
+        } else {
+            display.innerText = "GO！";
+            display.className = "time-display go-text";
+        }
         
-        const dh = Math.floor(limitSeconds / 3600);
-        const dm = Math.floor((limitSeconds % 3600) / 60);
-        document.getElementById(hintId).innerText = `（残り ${dh > 0 ? dh+'h'+dm+'m' : dm+'m'}）`;
+        playPresetSound(soundType);
+    }
+
+    function resetTimer(index) {
+        if (runningTimers[index]) {
+            clearInterval(runningTimers[index]);
+            delete runningTimers[index];
+        }
+        
+        const btn = document.getElementById(`btnPres-${index}`);
+        if (btn) btn.classList.remove('running');
+
+        const display = document.getElementById(`display-${index}`);
+        if (display) {
+            display.innerText = "--:--";
+            display.className = "time-display";
+        }
+    }
+
+    function updateDisplay(index, seconds) {
+        const display = document.getElementById(`display-${index}`);
+        if (!display) return;
+        const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const s = (seconds % 60).toString().padStart(2, '0');
+        display.innerText = `${m}:${s}`;
+        display.className = "time-display";
+    }
+
+    // 巻き戻し箇所：最も初期の安定して音が鳴っていたAudio再生ロジック
+    function playPresetSound(type) {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const volume = parseFloat(document.getElementById('volumeSlider').value);
+        
+        let notes = [];
+        let durations = [];
+        let waveType = 'triangle';
+        let speed = 80;
+
+        if (type === 'C') { 
+            notes = [523.25, 659.25, 0, 523.25, 659.25]; 
+            durations = [0.2, 0.2, 0.1, 0.2, 0.2];
+            waveType = 'triangle';
+            speed = 200;
+        } else if (type === 'D') { 
+            notes = [523.25, 587.33, 659.25, 698.46, 783.99, 880.00, 987.77, 1046.50];
+            durations = [0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.4];
+            waveType = 'sine';
+            speed = 60;
+        } else if (type === 'E') { 
+            notes = [220, 220, 0, 220, 220]; 
+            durations = [0.1, 0.1, 0.08, 0.1, 0.1];
+            waveType = 'sawtooth'; 
+            speed = 90;
+        } else if (type === 'F') { 
+            notes = [880.00, 1318.51, 1760.00]; 
+            durations = [0.05, 0.08, 0.4];
+            waveType = 'sine'; 
+            speed = 50;
+        } else { 
+            notes = [659.25, 783.99, 1046.50]; 
+            durations = [0.12, 0.12, 0.25];
+            waveType = 'triangle';
+            speed = 80;
+        }
+
+        notes.forEach((freq, i) => {
+            if (freq === 0) return; 
+            setTimeout(() => {
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                oscillator.type = waveType;
+                oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                
+                const modVol = type === 'E' ? 0.12 : 0.2;
+                gainNode.gain.setValueAtTime(volume * modVol, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + durations[i]);
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + durations[i]);
+            }, i * speed);
+        });
     }
 </script>
+
 </body>
 </html>
